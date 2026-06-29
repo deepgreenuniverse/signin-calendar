@@ -63,6 +63,7 @@ export default function SigninCalendar() {
       <StatsCard
         signedInToday={status.signedInToday}
         currentStreak={status.currentStreak}
+        longestStreak={status.longestStreak}
         totalDays={status.totalDays}
       />
 

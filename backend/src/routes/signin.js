@@ -72,7 +72,7 @@ router.get('/signin/calendar', (req, res) => {
   const recordMap = {};
   records.forEach(r => { recordMap[r.signin_date] = r.signin_time; });
 
-  res.json({ records: records.map(r => ({ date: r.signin_date, signed: true })) });
+  res.json({ records: records.map(r => ({ date: r.signin_date, time: r.signin_time, signed: true })) });
 });
 
 // Calculate streak info

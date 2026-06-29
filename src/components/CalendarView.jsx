@@ -72,7 +72,7 @@ export default function CalendarView({ userId, refreshKey }) {
               className="relative aspect-square flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all"
               onMouseEnter={(e) => {
                 if (cell.signed && cell.record) {
-                  const time = format(new Date(cell.record.createdAt), 'HH:mm');
+                  const time = cell.record.time || '--:--';
                   setTooltip({ date: cell.date, time, x: e.clientX, y: e.clientY });
                 }
               }}
