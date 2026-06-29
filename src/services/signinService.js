@@ -1,37 +1,50 @@
-import * as api from './api.js';
+import * as store from '../store/signinStore';
 import { getStreakInfo, getToday } from '../utils/dateUtils';
 
 const DEFAULT_USER = 'default_user';
 
 export const signin = async (userId = DEFAULT_USER, note = '') => {
-  return api.signin(note);
+  // localStorage already throws on duplicate, re-throw as promise-friendly error
+  try {
+    return store.createRecord(userId, note);
+  } catch (e) {
+    throw new Error(e.message || '签到失败');
+  }
 };
 
 export const getStatus = async (userId = DEFAULT_USER, monthStr = null) => {
-  const [status, stats] = await Promise.all([api.getStatus(), api.getStats()]);
-
   const today = getToday();
-  let records = [];
+  const allRecords = store.getRecordsByUser(userId);
 
+  // Today's status
+  const signedInToday = store.checkSignedIn(userId, today);
+
+  // Stats from all records
+  const stats = getStreakInfo(allRecords);
+
+  // Month records if requested
+  let records = [];
   if (monthStr) {
-    const cal = await api.getCalendar(monthStr);
-    records = cal.records || [];
+    records = store.getRecordsByMonth(userId, null, null)
+      .filter(r => r.date.startsWith(monthStr));
   }
 
   return {
-    signedInToday: status.signed,
+    signedInToday,
     currentStreak: stats.currentStreak,
     longestStreak: stats.longestStreak,
-    totalDays: stats.total,
+    totalDays: stats.totalDays,
     records,
   };
 };
 
 export const getCalendarDays = async (userId = DEFAULT_USER, year, month) => {
   const monthStr = `${year}-${String(month).padStart(2, '0')}`;
-  const cal = await api.getCalendar(monthStr);
+  const allRecords = store.getRecordsByUser(userId);
 
-  const recordMap = new Map((cal.records || []).map(r => [r.date, r]));
+  // Filter to this month
+  const monthRecords = allRecords.filter(r => r.date.startsWith(monthStr));
+  const recordMap = new Map(monthRecords.map(r => [r.date, r]));
   const today = getToday();
 
   const firstDay = new Date(year, month - 1, 1);
@@ -49,9 +62,8 @@ export const getCalendarDays = async (userId = DEFAULT_USER, year, month) => {
     });
   }
 
-  // Mark streak boundaries
-  const signedDates = (cal.records || []).map(r => r.date).sort();
-  const signedSet = new Set(signedDates);
+  // Build signed-set across ALL months for streak boundary detection
+  const signedSet = new Set(allRecords.map(r => r.date));
 
   const result = days.map(cell => {
     if (!cell.signed) return cell;
