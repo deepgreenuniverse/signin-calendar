@@ -4,7 +4,7 @@
 - 项目名称：签到日历系统（signin-calendar）
 - 项目目录：/Users/tanjun/hermes_agent/signin-calendar
 - 创建时间：2026-06-29
-- **状态**：dev_done
+- **状态**：test_pending（待秦瑶测试验证）
 
 ## GitHub 配置
 - 用户名：deepgreenuniverse
@@ -58,13 +58,20 @@ signin-calendar/
 - **状态**：✅ 200 OK，资源（JS/CSS）均可正常加载
 
 ## test_output
-**测试结果**：/FAIL/ → 修复完成，待复测
+**测试结果**：/FAIL/ → 发现新 bug，待修复
 
-**问题 1（致命）**：signinService.js 调用后端 API，完全未使用 localStorage
-- signinService.js 所有接口（signin/getStatus/getCalendar）都调用 `http://localhost:3001/api` 后端
-- store/signinStore.js 写了完整的 localStorage CRUD，但 service 层根本没调用它
-- **修复**：重写 signinService.js，所有接口改为调用 signinStore（localStorage）
+**已修复问题（来自上轮）**：
+- ✅ signinService.js 全部接口已改为调用 signinStore（localStorage）
 - ✅ npm run build 干净通过
 
-**问题 2**：signinService.js 和 store/signinStore.js 职责重叠但未连接
-- **修复**：signinService.js 直接调用 signinStore，职责统一
+**新发现 Bug（致命）**：dateUtils.js 的 getStreakInfo() 中 longestStreak 计算错误
+- **位置**：`src/utils/dateUtils.js` 第 37-44 行
+- **问题 1**：isConsecutive 参数顺序反了
+  - 代码：`isConsecutive(dates[i - 1], dates[i])`（新→旧方向）
+  - isConsecutive(a, b) 内部计算 `differenceInCalendarDays(b, a)`，要求 b = a + 1 天
+  - 正确方向：应传 `isConsecutive(dates[i], dates[i-1])`（旧→新方向）
+  - 结果：连续 3 天签到，longestStreak 错误累加为 1 而非 3
+- **问题 2**：longestStreak 初始化为 1
+  - 单日签到时循环不执行，longestStreak 错误返回 1 而非 0
+  - 应初始化为 0
+- **修复状态**：✅ 已修复，npm run build 通过

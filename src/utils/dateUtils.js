@@ -28,18 +28,23 @@ export const getStreakInfo = (records) => {
   const totalDays = sorted.length;
 
   // longest streak
-  let longestStreak = 1;
+  let longestStreak = 0;
   let currentStreak = 0;
 
   // Calculate streaks from sorted records
   const dates = sorted.map(r => r.date);
-  let streak = 1;
-  for (let i = 1; i < dates.length; i++) {
-    if (isConsecutive(dates[i - 1], dates[i])) {
-      streak++;
-      longestStreak = Math.max(longestStreak, streak);
-    } else {
-      streak = 1;
+  if (dates.length > 0) {
+    let streak = 1;
+    longestStreak = 1;
+    for (let i = 1; i < dates.length; i++) {
+      // dates is sorted desc (newest first), so dates[i] is older than dates[i-1]
+      // isConsecutive(prev, next) expects prev=older, next=newer (diff=1)
+      if (isConsecutive(dates[i], dates[i - 1])) {
+        streak++;
+        longestStreak = Math.max(longestStreak, streak);
+      } else {
+        streak = 1;
+      }
     }
   }
 
