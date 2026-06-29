@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# GitHub token
+.gh_token
+
+# SQLite database
+*.db
+*.db-shm
+*.db-wal
+
+# Backend dependencies
+backend/node_modules

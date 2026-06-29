@@ -1,93 +1,79 @@
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
-import { getRecordsByUser, createRecord as storeCreateRecord } from '../store/signinStore';
+import * as api from './api.js';
 import { getStreakInfo, getToday } from '../utils/dateUtils';
 
 const DEFAULT_USER = 'default_user';
 
-export const signin = (userId = DEFAULT_USER, note = '') => {
-  return storeCreateRecord(userId, note);
+export const signin = async (userId = DEFAULT_USER, note = '') => {
+  return api.signin(note);
 };
 
-export const getStatus = (userId = DEFAULT_USER, monthStr = null) => {
-  // monthStr format: YYYY-MM
-  const records = getRecordsByUser(userId);
-  const { currentStreak, longestStreak, totalDays } = getStreakInfo(records);
-  const today = getToday();
-  const signedInToday = records.some(r => r.date === today);
+export const getStatus = async (userId = DEFAULT_USER, monthStr = null) => {
+  const [status, stats] = await Promise.all([api.getStatus(), api.getStats()]);
 
-  // Filter records for the given month
-  let monthRecords = records;
+  const today = getToday();
+  let records = [];
+
   if (monthStr) {
-    monthRecords = records.filter(r => r.date.startsWith(monthStr));
+    const cal = await api.getCalendar(monthStr);
+    records = cal.records || [];
   }
 
   return {
-    signedInToday,
-    currentStreak,
-    longestStreak,
-    totalDays,
-    records: monthRecords,
+    signedInToday: status.signed,
+    currentStreak: stats.currentStreak,
+    longestStreak: stats.longestStreak,
+    totalDays: stats.total,
+    records,
   };
 };
 
-export const getCalendarDays = (userId = DEFAULT_USER, year, month) => {
-  // month: 1-12
+export const getCalendarDays = async (userId = DEFAULT_USER, year, month) => {
   const monthStr = `${year}-${String(month).padStart(2, '0')}`;
-  const records = getRecordsByUser(userId);
-  const recordMap = new Map(records.map(r => [r.date, r]));
+  const cal = await api.getCalendar(monthStr);
 
+  const recordMap = new Map((cal.records || []).map(r => [r.date, r]));
   const today = getToday();
 
-  const firstDay = startOfMonth(new Date(year, month - 1));
-  const lastDay = endOfMonth(new Date(year, month - 1));
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
 
-  // Get all days in month
-  const days = eachDayOfInterval({ start: firstDay, end: lastDay });
-
-  // Build day cells
-  const dayCells = days.map(date => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const isToday = dateStr === today;
-    const isFuture = dateStr > today;
-    const signed = recordMap.has(dateStr);
-
-    return {
+  const days = [];
+  for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0];
+    days.push({
       date: dateStr,
-      signed,
-      isToday,
-      isFuture,
-      record: signed ? recordMap.get(dateStr) : null,
-    };
-  });
+      signed: recordMap.has(dateStr),
+      isToday: dateStr === today,
+      isFuture: dateStr > today,
+      record: recordMap.get(dateStr) || null,
+    });
+  }
 
-  // Add streak info: mark consecutive runs
-  const signedDates = records.map(r => r.date).sort();
+  // Mark streak boundaries
+  const signedDates = (cal.records || []).map(r => r.date).sort();
   const signedSet = new Set(signedDates);
 
-  // Mark streak starts and ends in day cells
-  const result = dayCells.map(cell => {
+  const result = days.map(cell => {
     if (!cell.signed) return cell;
 
-    const dateObj = typeof cell.date === 'string' ? parseISO(cell.date) : cell.date;
-    const prev = format(new Date(dateObj.getTime() - 86400000), 'yyyy-MM-dd');
-    const next = format(new Date(dateObj.getTime() + 86400000), 'yyyy-MM-dd');
+    const prev = new Date(cell.date);
+    prev.setDate(prev.getDate() - 1);
+    const prevStr = prev.toISOString().split('T')[0];
 
-    const prevSigned = signedSet.has(prev);
-    const nextSigned = signedSet.has(next);
+    const next = new Date(cell.date);
+    next.setDate(next.getDate() + 1);
+    const nextStr = next.toISOString().split('T')[0];
 
     return {
       ...cell,
       streakInfo: {
-        isStreakStart: !prevSigned,
-        isStreakEnd: !nextSigned,
+        isStreakStart: !signedSet.has(prevStr),
+        isStreakEnd: !signedSet.has(nextStr),
       },
     };
   });
 
-  return {
-    month: monthStr,
-    days: result,
-  };
+  return { month: monthStr, days: result };
 };
 
 export const getPrevMonth = (year, month) => {

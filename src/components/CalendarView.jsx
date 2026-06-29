@@ -12,8 +12,7 @@ export default function CalendarView({ userId, refreshKey }) {
   const [tooltip, setTooltip] = useState(null);
 
   useEffect(() => {
-    const result = getCalendarDays(userId, year, month);
-    setData(result);
+    getCalendarDays(userId, year, month).then(result => setData(result));
   }, [year, month, userId, refreshKey]);
 
   const handlePrev = () => {

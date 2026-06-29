@@ -19,9 +19,13 @@ export default function SigninCalendar() {
   const [toast, setToast] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadStatus = () => {
-    const s = getStatus(DEFAULT_USER);
-    setStatus(s);
+  const loadStatus = async () => {
+    try {
+      const s = await getStatus(DEFAULT_USER);
+      setStatus(s);
+    } catch (e) {
+      console.error('Failed to load status:', e);
+    }
   };
 
   useEffect(() => {
@@ -37,9 +41,7 @@ export default function SigninCalendar() {
     if (status.signedInToday) return;
     setLoading(true);
     try {
-      // Simulate slight delay for UX
-      await new Promise(r => setTimeout(r, 300));
-      signin(DEFAULT_USER);
+      await signin(DEFAULT_USER);
       setRefreshKey(k => k + 1);
       showToast('签到成功！');
     } catch (e) {
