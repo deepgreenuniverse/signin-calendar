@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: signin-calendar-backend
+    env: node
+    region: oregon
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    plan: free
+    healthCheckPath: /health

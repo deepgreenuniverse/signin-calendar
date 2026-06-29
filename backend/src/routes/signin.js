@@ -4,6 +4,14 @@ import db from '../db/database.js';
 const router = Router();
 const DEFAULT_USER_ID = 1;
 
+// 北京时间（UTC+8）日期字符串，格式 YYYY-MM-DD
+function getBeijingDateStr() {
+  const now = new Date();
+  const offsetMs = (now.getTimezoneOffset() + 480) * 60 * 1000; // getTimezoneOffset 是负数
+  const beijing = new Date(now.getTime() - offsetMs);
+  return beijing.toISOString().split('T')[0];
+}
+
 // Get user profile
 router.get('/user/profile', (req, res) => {
   const user = db.prepare('SELECT id, username, avatar, created_at FROM user WHERE id = ?').get(DEFAULT_USER_ID);
@@ -13,7 +21,7 @@ router.get('/user/profile', (req, res) => {
 // POST /api/signin - 执行签到
 router.post('/signin', (req, res) => {
   const { note = '' } = req.body;
-  const today = new Date().toISOString().split('T')[0]; // 北京时间 YYYY-MM-DD
+  const today = getBeijingDateStr(); // 北京时间 YYYY-MM-DD
 
   // Check if already signed today
   const existing = db.prepare(
@@ -37,7 +45,7 @@ router.post('/signin', (req, res) => {
 
 // GET /api/signin/status - 今日签到状态
 router.get('/signin/status', (req, res) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getBeijingDateStr();
   const existing = db.prepare(
     'SELECT id FROM signin_record WHERE user_id = ? AND signin_date = ?'
   ).get(DEFAULT_USER_ID, today);
@@ -84,7 +92,7 @@ function calcStreak() {
   if (records.length === 0) return { currentStreak: 0, longestStreak: 0 };
 
   const dates = records.map(r => r.signin_date).sort().reverse();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getBeijingDateStr();
 
   // Current streak
   let currentStreak = 0;
@@ -93,7 +101,9 @@ function calcStreak() {
   // If latest is today or yesterday, count ongoing streak
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  // 北京时间昨天日期
+  const offsetMs = (yesterday.getTimezoneOffset() + 480) * 60 * 1000;
+  const yesterdayStr = new Date(yesterday.getTime() - offsetMs).toISOString().split('T')[0];
 
   if (latest === today || latest === yesterdayStr) {
     currentStreak = 1;
