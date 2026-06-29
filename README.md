@@ -1,16 +1,46 @@
-# React + Vite
+# 签到日历系统 (Sign-in Calendar)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+记录每日签到情况，以日历形式展示连续签到天数与断签状态。
 
-Currently, two official plugins are available:
+## 在线访问
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**地址**：https://deepgreenuniverse.github.io/signin-calendar/
 
-## React Compiler
+## 技术栈
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 18 + Vite
+- Tailwind CSS
+- Lucide React（图标）
+- date-fns（日期处理）
+- localStorage（数据存储）
 
-## Expanding the Oxlint configuration
+## 本地运行
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```bash
+npm install
+npm run dev
+```
+
+访问 http://localhost:5177
+
+## 构建
+
+```bash
+npm run build
+```
+
+产物输出到 `dist/`
+
+## 功能
+
+- ✅ 今日签到（按钮状态管理）
+- 📅 月历视图（月份切换）
+- 🔥 连续签到天数统计
+- 📊 累计签到天数统计
+- ⚠️ 断签日标记
+- 🎨 连续签到高亮样式
+
+## GitHub
+
+- 源码：https://github.com/deepgreenuniverse/signin-calendar
+- 仓库：deepgreenuniverse/signin-calendar
